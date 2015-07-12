@@ -1,38 +1,81 @@
 package com.grinddesign.ioio;
 
+import android.content.Context;
+import android.content.Intent;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import com.parse.Parse;
+import com.parse.ParseACL;
+import com.parse.ParseAnonymousUtils;
+import com.parse.ParseUser;
+import com.parse.ui.ParseLoginBuilder;
+
 
 public class MainActivity extends ActionBarActivity {
+
+    protected static Context context;
+
+    public MainActivity() {
+        context = this;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-    }
+        //setContentView(R.layout.activity_main);
+        //ParseCrashReporting.enable(this);
+        Parse.enableLocalDatastore(this);
+        Parse.initialize(this, "JK1dapivJ2wVb6xZGazZirweDGOIRm4X1dy8kS5e", "pvTUsck0JbYha27AegmKr8K5pfQNebGMwPf9eLfm");
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
+        ParseUser.enableAutomaticUser();
+        ParseACL defaultACL = new ParseACL();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        ParseACL.setDefaultACL(defaultACL, true);
+
+        if (ParseAnonymousUtils.isLinked(ParseUser.getCurrentUser())) {
+            ParseLoginBuilder builder = new ParseLoginBuilder(MainActivity.this);
+            startActivityForResult(builder.build(), 0);
+        } else {
+            ParseUser currentUser = ParseUser.getCurrentUser();
+            if (currentUser != null) {
+                Intent home = new Intent(MainActivity.this, BillActivity.class);
+                startActivity(home);
+            } else {
+                ParseLoginBuilder builder = new ParseLoginBuilder(MainActivity.this);
+                startActivityForResult(builder.build(), 0);
+            }
+
         }
+    }
 
-        return super.onOptionsItemSelected(item);
+    @Override
+    final protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        setResult(resultCode);
+        if (resultCode == RESULT_OK) {
+            Intent home = new Intent(MainActivity.this, BillActivity.class);
+            startActivity(home);
+        } else {
+            this.finish();
+            Intent intent = new Intent(Intent.ACTION_MAIN);
+            intent.addCategory(Intent.CATEGORY_HOME);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            System.exit(0);
+        }
+    }
+
+    public void onBackPressed()
+    {
+        this.finish();
+        Intent intent = new Intent(Intent.ACTION_MAIN);
+        intent.addCategory(Intent.CATEGORY_HOME);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+        System.exit(0);
     }
 }
